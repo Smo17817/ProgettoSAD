@@ -72,9 +72,6 @@ top_features_data <- phishing_data[, top_features]
 
 # FASE 3: Calcolo delle distribuzioni di Frequenza
 
-
-
-# Ciclo per creare barplot ottimizzati per le feature binarie
 for (feature in top_features) {
   if(feature != "URLSimilarityIndex"){
     # Calcolo la frequenza dei valori 0 e 1
@@ -99,7 +96,7 @@ for (feature in top_features) {
   }
 }
 
-# URLSIMILARITYINDEX
+# URLSimilarityIndex
 bins <- seq(0, 100, by = 10)
 
 phishing_data$URLSimilarityIndexClass <- cut(phishing_data$URLSimilarityIndex, 
@@ -127,5 +124,56 @@ print(class_counts)
 print("Frequenze relative per URLSimilarityIndex:")
 print(class_relative)
 
+
+```
+
+```{r}
+# FASE 4: calcolo degli indici di sintesi
+
+# Indici per le feature binarie
+for (feature in top_features) {
+  if (feature != "URLSimilarityIndex") {
+    # Calcolo la media
+    media_bin <- mean(phishing_data[[feature]])
+    
+    # Calcolo la varianza
+    var_bin <- var(phishing_data[[feature]])
+    
+    # Calcolo la deviazione standard
+    sd_bin <- sd(phishing_data[[feature]])
+    
+    # Calcolo la moda
+    moda_bin <- names(which.max(table(phishing_data[[feature]])))
+    
+    # Stampa dei risultati
+    cat("\nFeature:", feature, "\n")
+    cat("Media:", round(media_bin, 4), "\n")
+    cat("Varianza:", round(var_bin, 4), "\n")
+    cat("Deviaizone Standard:", round(sd_bin, 4), "\n")
+    cat("Moda:", moda_bin, "\n")
+  }
+}
+
+# Indici per URLSimilarityIndex
+mean_url <- mean(phishing_data$URLSimilarityIndex)
+median_url <- median(phishing_data$URLSimilarityIndex)
+mode_url <- as.numeric(names(sort(table(phishing_data$URLSimilarityIndex), decreasing = TRUE)[1]))
+var_url <- var(phishing_data$URLSimilarityIndex)
+sd_url <- sd(phishing_data$URLSimilarityIndex)
+min_url <- min(phishing_data$URLSimilarityIndex)
+max_url <- max(phishing_data$URLSimilarityIndex)
+quantiles_url <- quantile(phishing_data$URLSimilarityIndex, probs = c(0.25, 0.75))
+
+# Stampa dei risultati
+cat("\nIndice di sintesi per URLSimilarityIndex:\n")
+cat("Media:", round(mean_url, 4), "\n")
+cat("Mediana:", round(median_url, 4), "\n")
+cat("Moda:", mode_url, "\n")
+cat("Varianza:", round(var_url, 4), "\n")
+cat("Deviazione Standard:", round(sd_url, 4), "\n")
+cat("Valore Minimo:", min_url, "\n")
+cat("Valore Massimo:", max_url, "\n")
+cat("Primo Quartile (Q1):", quantiles_url[1], "\n")
+cat("Terzo Quartile (Q3):", quantiles_url[2], "\n")
 
 ```
