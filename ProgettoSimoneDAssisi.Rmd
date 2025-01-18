@@ -1,0 +1,86 @@
+---
+title: "ProgettoSimoneDAssisi"
+output: html_document
+---
+
+```{r}
+#STUDIO ED ANALISI DI DATASET LEGATO AL PHISHING
+#Author: Simone D'Assisi
+```
+
+```{r}
+# INSTALLAZIONE PACCHETTI
+packages <- c("corrplot", "tidyverse", "ggplot2", "DataExplorer")
+
+install.packages(setdiff(packages, rownames(installed.packages())))
+
+# Caricamento delle librerie
+library(tidyverse)  # Per manipolazione e visualizzazione dei dati
+library(corrplot)   # Per la visualizzazione delle correlazioni
+library(ggplot2)    # Per la creazione di grafici
+library(DataExplorer)  # Per report automatici sull'EDA
+
+```
+
+```{r}
+
+#ANALISI DESCRITTIVA DEL DATASET
+
+#FASE 1: In questa fase il Dataset viene caricato e viene mostrato se sono presenti valori mancanti
+
+# Caricamento del dataset
+phishing_data <- read.csv("Phishing_URL_Dataset_2.csv", sep = ";")
+
+# Visualizzare le prime righe del dataset
+head(phishing_data)
+
+# Verifica della struttura del dataset
+str(phishing_data)
+
+# Controllo dei valori mancanti
+colSums(is.na(phishing_data))
+
+```
+
+```{r}
+
+#FASE 2: vengono analizzate le feature che hanno un valore predittivo maggiore
+
+# Codifica numerica della colonna 'Domain' per la creazione della matrice di correlazione
+phishing_data$Domain_numeric <- as.numeric(factor(phishing_data$Domain))
+
+# Codifica numerica della colonna 'Title' per la creazione della matrice di correlazione
+phishing_data$Title_numeric <- as.numeric(factor(phishing_data$Title))
+
+# MATRICE DI CORRELAZIONE
+# Verrà di seguito creata la matrice di correlazione che considererà solo le colonne con valori numerici. 
+numeric_data <- phishing_data[sapply(phishing_data, is.numeric)]
+
+# Calcolo della correlazione tra tutte le variabili e la variabile target
+label_correlation <- correlation_matrix["label", ]
+sorted_label_correlation <- sort(label_correlation, decreasing = TRUE)
+print(sorted_label_correlation)
+
+# Selezione delle 5 feature più correlate con la variabile target ('label' esclusa)
+top_features <- names(sorted_label_correlation[1:6])
+
+#FASE 3: ANALISI VISIVA DELLE TOP FEATURES
+# Boxplot per feature numeriche
+for (feature in top_features) {
+  ggplot(phishing_data, aes(x = factor(label), y = get(feature))) +
+    geom_boxplot(fill = "#00AFBB") +
+    labs(title = paste("Distribuzione di", feature, "rispetto alla variabile target"),
+         x = "Classe (0 = Legittimo, 1 = Phishing)", y = feature) +
+    theme_minimal() -> p
+  print(p)
+}
+
+
+```
+
+```{r}
+
+
+
+
+```
