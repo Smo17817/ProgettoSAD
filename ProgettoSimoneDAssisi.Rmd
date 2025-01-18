@@ -44,43 +44,88 @@ colSums(is.na(phishing_data))
 
 ```{r}
 
-#FASE 2: vengono analizzate le feature che hanno un valore predittivo maggiore
+# FASE 2: vengono analizzate le feature che hanno un valore predittivo maggiore
 
-# Codifica numerica della colonna 'Domain' per la creazione della matrice di correlazione
+# Codifica numerica delle colonne 'Domain' e 'Title'  per la creazione della matrice di correlazione
 phishing_data$Domain_numeric <- as.numeric(factor(phishing_data$Domain))
-
-# Codifica numerica della colonna 'Title' per la creazione della matrice di correlazione
 phishing_data$Title_numeric <- as.numeric(factor(phishing_data$Title))
 
-# MATRICE DI CORRELAZIONE
-# Verrà di seguito creata la matrice di correlazione che considererà solo le colonne con valori numerici. 
+# CORRELAZIONE TRA TUTTE LE FEATURE E LA VARIABILE TARGET
+
+# Esclusione delle variabili non numeriche
 numeric_data <- phishing_data[sapply(phishing_data, is.numeric)]
 
-# Calcolo della correlazione tra tutte le variabili e la variabile target
 label_correlation <- correlation_matrix["label", ]
 sorted_label_correlation <- sort(label_correlation, decreasing = TRUE)
 print(sorted_label_correlation)
 
-# Selezione delle 5 feature più correlate con la variabile target ('label' esclusa)
+# Selezione delle 5 feature più correlate con la variabile target
 top_features <- names(sorted_label_correlation[1:6])
-
-#FASE 3: ANALISI VISIVA DELLE TOP FEATURES
-# Boxplot per feature numeriche
-for (feature in top_features) {
-  ggplot(phishing_data, aes(x = factor(label), y = get(feature))) +
-    geom_boxplot(fill = "#00AFBB") +
-    labs(title = paste("Distribuzione di", feature, "rispetto alla variabile target"),
-         x = "Classe (0 = Legittimo, 1 = Phishing)", y = feature) +
-    theme_minimal() -> p
-  print(p)
-}
 
 
 ```
 
 ```{r}
 
+# Esegui la selezione delle feature
+top_features_data <- phishing_data[, top_features]
 
+# FASE 3: Calcolo delle distribuzioni di Frequenza
+
+
+
+# Ciclo per creare barplot ottimizzati per le feature binarie
+for (feature in top_features) {
+  if(feature != "URLSimilarityIndex"){
+    # Calcolo la frequenza dei valori 0 e 1
+    feature_counts <- table(phishing_data[[feature]])
+    
+    # Barplot per le feature binarie (0 e 1)
+    barplot(feature_counts,
+            main = paste("Distribuzione della Feature:", feature),
+            col = c("#00AFBB", "#E7B800"),
+            names.arg = names(feature_counts),
+            xlab = feature,
+            ylab = "Frequenza")
+  
+    # frequenza relativa
+    feature_relative <- feature_counts / sum(feature_counts)
+    
+    print(feature)
+    print("Frequenza Assoluta:")
+    print(feature_counts)
+    print("Frequenza Relativa:")
+    print(feature_relative)
+  }
+}
+
+# URLSIMILARITYINDEX
+bins <- seq(0, 100, by = 10)
+
+phishing_data$URLSimilarityIndexClass <- cut(phishing_data$URLSimilarityIndex, 
+                                             breaks = bins, 
+                                             include.lowest = TRUE, 
+                                             right = FALSE, 
+                                             labels = paste0("[", bins[-length(bins)], "-", bins[-1], ")"))
+
+# Calcola le frequenze per ciascun intervallo
+class_counts <- table(phishing_data$URLSimilarityIndexClass)
+
+# Crea un barplot per visualizzare la distribuzione delle classi di URLSimilarityIndex
+barplot(class_counts,
+        main = "Distribuzione di URLSimilarityIndex in classi",
+        col = "#00AFBB",
+        xlab = "Intervallo di URLSimilarityIndex",
+        ylab = "Frequenza")  # 'las = 2' per ruotare le etichette dell'asse X
+
+# Calcola le frequenze relative per ciascun intervallo
+class_relative <- class_counts / sum(class_counts)
+
+# Stampa le frequenze assolute e relative
+print("Frequenze assolute per URLSimilarityIndex:")
+print(class_counts)
+print("Frequenze relative per URLSimilarityIndex:")
+print(class_relative)
 
 
 ```
