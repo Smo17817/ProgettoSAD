@@ -20,6 +20,7 @@ library(corrplot)   # Per la visualizzazione delle correlazioni
 library(ggplot2)    # Per la creazione di grafici
 library(DataExplorer)  # Per report automatici sull'EDA
 library(e1071)
+library(reshape2)
 
 ```
 
@@ -158,6 +159,7 @@ plot(bins[-length(bins)],
 ```
 
 ```{r}
+
 # FASE 5: calcolo degli indici di sintesi
 
 # Indici per le feature binarie
@@ -210,6 +212,7 @@ cat("Terzo Quartile (Q3):", quantiles_url[2], "\n")
 
 
 ```{r}
+
 #FASE 5.1: Calcolo quartili
 
 quantiles_url <- summary(phishing_data$URLSimilarityIndex)
@@ -232,50 +235,97 @@ cat("Massimo (Q4):", quantiles_url[5], "\n")
 
 ```
 
-```{r}
+```{r} 
 
-# FASE 5.2: Calcolo della misure di simmetria per URLSimilarityIndex
-
+# FASE 5.2: Calcolo delle della misure di simmetria per URLSimilarityIndex
 skewness_url <- skewness(phishing_data$URLSimilarityIndex)
-cat("Skewness per URLSimilarityIndex:", round(skewness_url, 4), "\n")
-
-# Grafico per la skewness
-ggplot(phishing_data, 
-       aes(x = URLSimilarityIndex)) + 
-           geom_histogram(
-              aes(y = ..density..),
-              bins = 10, 
-              fill = "#00AFBB", 
-              color = "black", 
-              alpha = 0.7) + 
-           geom_density(alpha = 0.2, fill = "red") + 
-           labs(title = "Skewness di URLSimilarityIndex", 
-        x = "URLSimilarityIndex",
-        y = "Densità") + theme_minimal() + annotate("text", x = max(phishing_data$URLSimilarityIndex) * 0.8, y = 0.02, 
-           label = paste("Skewness =", round(skewness_url, 4)), color = "red")
-
 kurtosis_url <- kurtosis(phishing_data$URLSimilarityIndex)
+
+cat("Skewness per URLSimilarityIndex:", round(skewness_url, 4), "\n")
 cat("Curtosi per URLSimilarityIndex:", round(kurtosis_url, 4), "\n")
 
-# Grafico per la curtosi
-ggplot(phishing_data, aes(x = URLSimilarityIndex)) + 
+# Grafico per la skewness e la curtosi
+ggplot(phishing_data, 
+       aes(x = URLSimilarityIndex)) + 
   geom_histogram(
     aes(y = ..density..),
     bins = 10, 
-    fill = "#FF5733", 
+    fill = "#00AFBB", 
     color = "black", 
     alpha = 0.7) + 
-  geom_density(alpha = 0.2, fill = "blue") + 
-  labs(title = "Curtosi di URLSimilarityIndex", 
-       x = "URLSimilarityIndex", 
+  geom_density(alpha = 0.2, fill = "red") + 
+  labs(title = "Skewness e Curtosi di URLSimilarityIndex", 
+       x = "URLSimilarityIndex",
        y = "Densità") + 
   theme_minimal() + 
-  annotate("text", x = max(phishing_data$URLSimilarityIndex) * 0.8, y = 0.02, 
-           label = paste("Curtosi =", round(kurtosis_url, 4)), color = "blue")
-
-
+  annotate("text", x = max(phishing_data$URLSimilarityIndex) * 0.8, 
+           y = 0.02, 
+           label = paste("Skewness =", round(skewness_url, 4)), 
+           color = "red") +
+  annotate("text", x = max(phishing_data$URLSimilarityIndex) * 0.8, 
+           y = 0.015, 
+           label = paste("Curtosi =", round(kurtosis_url, 4)), 
+           color = "blue")
 
 ```
 
 ```{r}
+#FASE 6: Statistica descrittiva bivariata
 
+# Calcolo della covarianza tra variabili
+for (feature in top_features) {
+  if (feature != "URLSimilarityIndex") {
+    # Covarianza tra la variabile continua e la binaria
+    cov_bin_cont <- cov(phishing_data$URLSimilarityIndex, phishing_data[[feature]])
+    cat("\nCovarianza tra", feature, " e URLSimilarityIndex:", round(cov_bin_cont, 4), "\n")
+    
+    # Covarianza tra due variabili binarie
+    for (feature2 in top_features) {
+      if (feature != feature2) {
+        cov_bin_bin <- cov(phishing_data[[feature]], phishing_data[[feature2]])
+        cat("Covarianza tra", feature, "e", feature2, ":", round(cov_bin_bin, 4), "\n")
+      }
+    }
+  }
+}
+
+
+# Calcolo del coefficiente di correlazione tra la variabile target e tutte le altre
+cat("\nCoefficiente di correlazione con la variabile target 'label':\n")
+for (feature in top_features) {
+  if (feature != "label") {
+    cor_with_label <- cor(phishing_data$label, phishing_data[[feature]], method = "pearson")
+    cat("Correlazione tra label e", feature, ":", round(cor_with_label, 4), "\n")
+  }
+}
+
+# Sottocampionamento casuale dei dati
+set.seed(123)  # Per riproducibilità
+sampled_data <- phishing_data[sample(1:nrow(phishing_data), 100), ]
+
+# Creazione degli scatterplot con la retta di regressione
+for (feature in top_features) {
+  if (feature != "label") {
+    plot <- ggplot(sampled_data, aes_string(x = feature, y = "label")) +
+      geom_jitter(width = 0.1, height = 0.1, alpha = 0.5, color = "#00AFBB") +  # Cambia il colore dei pallini
+      geom_smooth(method = "lm", color = "red", se = FALSE) +  # Aggiungi la retta di regressione
+      labs(title = paste("Scatterplot tra", feature, "e label"),
+           x = feature, y = "label") +
+      theme_minimal()
+    print(plot)  # Mostra il grafico
+  }
+}
+
+# Calcolo della matrice di correlazione
+cor_matrix <- cor(phishing_data[, top_features], method = "pearson")
+
+# Heatmap della matrice di correlazione con asse X verticale
+cor_matrix_melted <- melt(cor_matrix)
+ggplot(cor_matrix_melted, aes(Var1, Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(midpoint = 0, low = "blue", high = "red", mid = "white") +
+  theme_minimal() +
+  labs(title = "Matrice di Correlazione tra le variabili") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotazione dei nomi sull'asse X
+
+```
