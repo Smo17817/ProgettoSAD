@@ -10,7 +10,7 @@ output: html_document
 
 ```{r}
 # INSTALLAZIONE PACCHETTI
-packages <- c("corrplot", "tidyverse", "ggplot2", "DataExplorer")
+packages <- c("corrplot", "tidyverse", "ggplot2", "DataExplorer", "e1071")
 
 install.packages(setdiff(packages, rownames(installed.packages())))
 
@@ -19,6 +19,7 @@ library(tidyverse)  # Per manipolazione e visualizzazione dei dati
 library(corrplot)   # Per la visualizzazione delle correlazioni
 library(ggplot2)    # Per la creazione di grafici
 library(DataExplorer)  # Per report automatici sull'EDA
+library(e1071)
 
 ```
 
@@ -61,7 +62,6 @@ print(sorted_label_correlation)
 
 # Selezione delle 5 feature più correlate con la variabile target
 top_features <- names(sorted_label_correlation[1:6])
-
 
 ```
 
@@ -123,7 +123,6 @@ print("Frequenze assolute per URLSimilarityIndex:")
 print(class_counts)
 print("Frequenze relative per URLSimilarityIndex:")
 print(class_relative)
-
 
 ```
 
@@ -208,3 +207,75 @@ cat("Primo Quartile (Q1):", quantiles_url[1], "\n")
 cat("Terzo Quartile (Q3):", quantiles_url[2], "\n")
 
 ```
+
+
+```{r}
+#FASE 5.1: Calcolo quartili
+
+quantiles_url <- summary(phishing_data$URLSimilarityIndex)
+
+# Creazione del boxplot
+boxplot(phishing_data$URLSimilarityIndex,
+        main = "Boxplot di URLSimilarityIndex",
+        ylab = "Valori di URLSimilarityIndex",
+        col = "#00AFBB",
+        border = "darkblue",
+        notch = FALSE)
+
+# Stampa dei risultati
+cat("\nQuartili per URLSimilarityIndex:\n")
+cat("Minimo (Q0): ", quantiles_url[1], "\n")
+cat("Primo Quartile (Q1):", quantiles_url[2], "\n")
+cat("Mediana (Q2):", quantiles_url[3], "\n")
+cat("Terzo Quartile (Q3):", quantiles_url[4], "\n")
+cat("Massimo (Q4):", quantiles_url[5], "\n")
+
+```
+
+```{r}
+
+# FASE 5.2: Calcolo della misure di simmetria per URLSimilarityIndex
+
+skewness_url <- skewness(phishing_data$URLSimilarityIndex)
+cat("Skewness per URLSimilarityIndex:", round(skewness_url, 4), "\n")
+
+# Grafico per la skewness
+ggplot(phishing_data, 
+       aes(x = URLSimilarityIndex)) + 
+           geom_histogram(
+              aes(y = ..density..),
+              bins = 10, 
+              fill = "#00AFBB", 
+              color = "black", 
+              alpha = 0.7) + 
+           geom_density(alpha = 0.2, fill = "red") + 
+           labs(title = "Skewness di URLSimilarityIndex", 
+        x = "URLSimilarityIndex",
+        y = "Densità") + theme_minimal() + annotate("text", x = max(phishing_data$URLSimilarityIndex) * 0.8, y = 0.02, 
+           label = paste("Skewness =", round(skewness_url, 4)), color = "red")
+
+kurtosis_url <- kurtosis(phishing_data$URLSimilarityIndex)
+cat("Curtosi per URLSimilarityIndex:", round(kurtosis_url, 4), "\n")
+
+# Grafico per la curtosi
+ggplot(phishing_data, aes(x = URLSimilarityIndex)) + 
+  geom_histogram(
+    aes(y = ..density..),
+    bins = 10, 
+    fill = "#FF5733", 
+    color = "black", 
+    alpha = 0.7) + 
+  geom_density(alpha = 0.2, fill = "blue") + 
+  labs(title = "Curtosi di URLSimilarityIndex", 
+       x = "URLSimilarityIndex", 
+       y = "Densità") + 
+  theme_minimal() + 
+  annotate("text", x = max(phishing_data$URLSimilarityIndex) * 0.8, y = 0.02, 
+           label = paste("Curtosi =", round(kurtosis_url, 4)), color = "blue")
+
+
+
+```
+
+```{r}
+
