@@ -155,7 +155,6 @@ plot(bins[-length(bins)],
      col = "#00AFBB", 
      lwd = 2)
 
-
 ```
 
 ```{r}
@@ -209,7 +208,6 @@ cat("Primo Quartile (Q1):", quantiles_url[1], "\n")
 cat("Terzo Quartile (Q3):", quantiles_url[2], "\n")
 
 ```
-
 
 ```{r}
 
@@ -327,5 +325,35 @@ ggplot(cor_matrix_melted, aes(Var1, Var2, fill = value)) +
   theme_minimal() +
   labs(title = "Matrice di Correlazione tra le variabili") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotazione dei nomi sull'asse X
+
+```
+
+```{r}
+
+# FASE 6.1: Tabelle di Contingenza
+
+cat("\n# Tabelle di contingenza\n")
+
+# Creazione degli intervalli di 10 per URLSimilarityIndex
+phishing_data$URLSimilarityIndex_bins <- cut(
+  phishing_data$URLSimilarityIndex, 
+  breaks = seq(0, 100, by = 10),
+  include.lowest = TRUE, 
+  right = FALSE
+)
+
+# Tabella di contingenza tra 'label' e URLSimilarityIndex
+cat("\nTabella di contingenza tra 'label' e intervalli di URLSimilarityIndex:\n")
+url_contingency_table <- table(phishing_data$label, phishing_data$URLSimilarityIndex_bins)
+print(url_contingency_table)
+
+# Tabelle di contingenza per le variabili binarie
+for (feature in top_features) {
+  if (feature != "label" && feature != "URLSimilarityIndex") {
+    contingency_table <- table(phishing_data$label, phishing_data[[feature]])
+    cat("\nTabella di contingenza tra 'label' e", feature, ":\n")
+    print(contingency_table)
+  }
+}
 
 ```
