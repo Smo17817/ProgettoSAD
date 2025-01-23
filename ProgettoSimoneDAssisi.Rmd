@@ -10,7 +10,7 @@ output: html_document
 
 ```{r}
 # INSTALLAZIONE PACCHETTI
-packages <- c("corrplot", "tidyverse", "ggplot2", "DataExplorer", "e1071")
+packages <- c("corrplot", "tidyverse", "ggplot2", "DataExplorer", "e1071", "caTools", "caret")
 
 install.packages(setdiff(packages, rownames(installed.packages())))
 
@@ -21,6 +21,8 @@ library(ggplot2)    # Per la creazione di grafici
 library(DataExplorer)  # Per report automatici sull'EDA
 library(e1071)
 library(reshape2)
+library(caTools)
+library(caret)
 
 ```
 
@@ -31,7 +33,7 @@ library(reshape2)
 #FASE 1: In questa fase il Dataset viene caricato e viene mostrato se sono presenti valori mancanti
 
 # Caricamento del dataset
-phishing_data <- read.csv("Phishing_URL_Dataset_2.csv", sep = ";")
+phishing_data <- read.csv("Dataset/Phishing_URL_Dataset_2.csv", sep = ";")
 
 # Visualizzare le prime righe del dataset
 head(phishing_data)
@@ -56,6 +58,7 @@ phishing_data$Title_numeric <- as.numeric(factor(phishing_data$Title))
 
 # Esclusione delle variabili non numeriche
 numeric_data <- phishing_data[sapply(phishing_data, is.numeric)]
+correlation_matrix <- cor(numeric_data, use = "complete.obs")
 
 label_correlation <- correlation_matrix["label", ]
 sorted_label_correlation <- sort(label_correlation, decreasing = TRUE)
@@ -355,5 +358,187 @@ for (feature in top_features) {
     print(contingency_table)
   }
 }
+
+```
+
+```{r}
+
+#FASE 7: Creazione del modello
+
+#Per riproducibilità
+set.seed(123)
+
+# Dividere il dataset in 70% training e 30% test
+split <- sample.split(top_features_data$label, SplitRatio = 0.7)
+train_data <- subset(top_features_data, split == TRUE)
+test_data <- subset(top_features_data, split == FALSE)
+
+# Creare il modello di regressione logistica
+model <- glm(label ~ URLSimilarityIndex + HasSocialNet + HasCopyrightInfo + HasDescription + IsHTTPS,
+             data = train_data, 
+             family = binomial)
+
+# Riassunto del modello
+summary(model)
+
+# Fare previsioni sul test set
+test_data$predicted_prob <- predict(model, newdata = test_data, type = "response")
+
+# Convertire le probabilità in etichette binarie (threshold 0.5)
+test_data$predicted_label <- ifelse(test_data$predicted_prob > 0.5, 1, 0)
+
+# Calcolare l'accuratezza del modello
+accuracy <- mean(test_data$predicted_label == test_data$label)
+cat("Accuratezza del modello sul test set:", accuracy, "\n")
+
+# Creare una matrice di confusione
+conf_matrix <- confusionMatrix(as.factor(test_data$predicted_label), as.factor(test_data$label))
+print(conf_matrix)
+
+
+
+
+```
+
+```{r}
+
+# Fase 7.1: Confronto con un altro dataset identico
+
+test_set <- read.csv("Dataset/Phishing_URL_Testset.csv", sep = ";")
+
+# Prevedere le probabilità
+test_set$predicted_prob <- predict(model, newdata = test_set, type = "response")
+
+# Convertire le probabilità in etichette binarie (threshold 0.5)
+test_set$predicted_label <- ifelse(test_set$predicted_prob > 0.5, 1, 0)
+
+# Accuratezza
+accuracy <- mean(test_set$predicted_label == test_set$label)
+cat("Accuratezza del modello sul nuovo dataset:", accuracy, "\n")
+
+# Confusion Matrix
+conf_matrix <- confusionMatrix(as.factor(test_set$predicted_label), as.factor(test_set$label))
+print(conf_matrix)
+
+```
+
+```{r}
+
+# Estrazione righe come esempio per l'LLM
+
+first_five_rows <- head(phishing_data, 5)
+
+# Salvare le righe estratte in un nuovo file .csv
+write.csv(first_five_rows, "First_Five_Rows.csv", row.names = FALSE)
+
+cat("Il file 'First_Five_Rows.csv' è stato salvato con successo.")
+
+```
+
+```{r}
+# FASE 8: Caricamento Dataset Sintetico
+
+synthetic_data <- read.csv("Dataset/Synthetic_Phishing_Dataset.csv")
+
+head(synthetic_data)
+
+# Esegui la selezione delle feature
+synthetic_top_data <- synthetic_data[, top_features]
+
+```
+
+```{r}
+
+# FASE 9: Calcolo dei coeff. di correlazione con label
+
+# Codifica numerica delle colonne 'Domain' e 'Title'  per la creazione della matrice di correlazione
+synthetic_data$Domain_numeric <- as.numeric(factor(synthetic_data$Domain))
+synthetic_data$Title_numeric <- as.numeric(factor(synthetic_data$Title))
+
+# Esclusione delle variabili non numeriche
+numeric_data <- synthetic_data[sapply(synthetic_data, is.numeric)]
+correlation_matrix <- cor(numeric_data, use = "complete.obs")
+
+label_correlation <- correlation_matrix["label", ]
+sorted_label_correlation <- sort(label_correlation, decreasing = TRUE)
+print(sorted_label_correlation)
+
+```
+
+```{r}
+
+# FASE 10: Calcolo delle distribuzioni di Frequenza
+
+for (feature in top_features) {
+  if(feature != "URLSimilarityIndex"){
+    # Calcolo la frequenza dei valori 0 e 1
+    feature_counts <- table(synthetic_top_data[[feature]])
+    
+    # Barplot per le feature binarie (0 e 1)
+    barplot(feature_counts,
+            main = paste("Distribuzione della Feature:", feature),
+            col = c("#00AFBB", "#E7B800"),
+            names.arg = names(feature_counts),
+            xlab = feature,
+            ylab = "Frequenza")
+  
+    # frequenza relativa
+    feature_relative <- feature_counts / sum(feature_counts)
+    
+    print(feature)
+    print("Frequenza Assoluta:")
+    print(feature_counts)
+    print("Frequenza Relativa:")
+    print(feature_relative)
+  }
+}
+
+# URLSimilarityIndex
+bins <- seq(0, 100, by = 10)
+
+synthetic_top_data$URLSimilarityIndexClass <- cut(synthetic_top_data$URLSimilarityIndex, 
+                                             breaks = bins, 
+                                             include.lowest = TRUE, 
+                                             right = FALSE, 
+                                             labels = paste0("[", bins[-length(bins)], "-", bins[-1], ")"))
+
+# Calcola le frequenze per ciascun intervallo
+class_counts <- table(synthetic_top_data$URLSimilarityIndexClass)
+
+# Crea un barplot per visualizzare la distribuzione delle classi di URLSimilarityIndex
+barplot(class_counts,
+        main = "Distribuzione di URLSimilarityIndex in classi",
+        col = "#00AFBB",
+        xlab = "Intervallo di URLSimilarityIndex",
+        ylab = "Frequenza")  # 'las = 2' per ruotare le etichette dell'asse X
+
+# Calcola le frequenze relative per ciascun intervallo
+class_relative <- class_counts / sum(class_counts)
+
+# Stampa le frequenze assolute e relative
+print("Frequenze assolute per URLSimilarityIndex:")
+print(class_counts)
+print("Frequenze relative per URLSimilarityIndex:")
+print(class_relative)
+
+```
+
+```{r}
+
+# FASE: Applicazione del modello su dati sintetici
+
+# Prevedere le probabilità
+synthetic_top_data$predicted_prob <- predict(model, newdata = synthetic_top_data, type = "response")
+
+# Convertire le probabilità in etichette binarie (threshold 0.5)
+synthetic_top_data$predicted_label <- ifelse(synthetic_top_data$predicted_prob > 0.5, 1, 0)
+
+# Accuratezza
+accuracy <- mean(synthetic_top_data$predicted_label == synthetic_top_data$label)
+cat("Accuratezza del modello sul nuovo dataset:", accuracy, "\n")
+
+# Confusion Matrix
+conf_matrix <- confusionMatrix(as.factor(synthetic_top_data$predicted_label), as.factor(synthetic_top_data$label))
+print(conf_matrix)
 
 ```
