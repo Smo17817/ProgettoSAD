@@ -449,7 +449,7 @@ synthetic_top_data <- synthetic_data[, top_features]
 
 ```{r}
 
-# FASE 9: Calcolo dei coeff. di correlazione con label
+# FASE 8.1: Calcolo dei coeff. di correlazione con label
 
 # Codifica numerica delle colonne 'Domain' e 'Title'  per la creazione della matrice di correlazione
 synthetic_data$Domain_numeric <- as.numeric(factor(synthetic_data$Domain))
@@ -467,7 +467,7 @@ print(sorted_label_correlation)
 
 ```{r}
 
-# FASE 10: Calcolo delle distribuzioni di Frequenza
+# FASE 8.2: Calcolo delle distribuzioni di Frequenza
 
 for (feature in top_features) {
   if(feature != "URLSimilarityIndex"){
@@ -520,6 +520,104 @@ print("Frequenze assolute per URLSimilarityIndex:")
 print(class_counts)
 print("Frequenze relative per URLSimilarityIndex:")
 print(class_relative)
+
+```
+
+```{r}
+
+# FASE 8.3: calcolo della Funzione di Distribuzione Empirica Continua per URLSimilarityIndex sintetica
+
+# Calcola la frequenza cumulativa
+cumulative_frequency <- cumsum(class_relative)
+
+# Creiamo una lista per la FDEC, includendo i valori degli intervalli
+FDEC_data <- data.frame(
+  Intervallo = names(class_counts),
+  FrequenzaAssoluta = class_counts,
+  FrequenzaRelativa = class_relative,
+  FrequenzaCumulativa = cumulative_frequency
+)
+
+# Visualizzare i risultati
+print(FDEC_data)
+
+# Visualizzare la FDEC come un grafico
+plot(bins[-length(bins)], 
+     cumulative_frequency, 
+     type = "b", 
+     main = "FDEC per URLSimilarityIndex",
+     xlab = "Intervallo di URLSimilarityIndex", 
+     ylab = "F(x)", 
+     col = "#00AFBB", 
+     lwd = 2)
+
+```
+
+```{r}
+
+# FASE 8.4: calcolo degli indici di sintesi per le variabili sintetiche
+
+# Indici per le feature binarie
+for (feature in top_features) {
+  if (feature != "URLSimilarityIndex") {
+    # Calcolo la media
+    media_bin <- mean(synthetic_top_data[[feature]])
+    
+    # Calcolo la varianza
+    var_bin <- var(synthetic_top_data[[feature]])
+    
+    # Calcolo la deviazione standard
+    sd_bin <- sd(synthetic_top_data[[feature]])
+    
+    # Calcolo la moda
+    moda_bin <- names(which.max(table(synthetic_top_data[[feature]])))
+    
+    # Stampa dei risultati
+    cat("\nFeature:", feature, "\n")
+    cat("Media:", round(media_bin, 4), "\n")
+    cat("Varianza:", round(var_bin, 4), "\n")
+    cat("Deviaizone Standard:", round(sd_bin, 4), "\n")
+    cat("Moda:", moda_bin, "\n")
+  }
+}
+
+# Indici per URLSimilarityIndex
+mean_url <- mean(synthetic_top_data$URLSimilarityIndex)
+median_url <- median(synthetic_top_data$URLSimilarityIndex)
+mode_url <- as.numeric(names(sort(table(synthetic_top_data$URLSimilarityIndex), decreasing = TRUE)[1]))
+var_url <- var(synthetic_top_data$URLSimilarityIndex)
+sd_url <- sd(synthetic_top_data$URLSimilarityIndex)
+min_url <- min(synthetic_top_data$URLSimilarityIndex)
+max_url <- max(synthetic_top_data$URLSimilarityIndex)
+quantiles_url <- quantile(synthetic_top_data$URLSimilarityIndex, probs = c(0.25, 0.75))
+IQR <- quantiles_url[2] - quantiles_url[1]
+lim_inf <- quantiles_url[1] - (1.5 * IQR)
+lim_sup <- quantiles_url[2] + (1.5 * IQR)
+
+# Stampa dei risultati
+cat("\nIndice di sintesi per URLSimilarityIndex:\n")
+cat("Media:", round(mean_url, 4), "\n")
+cat("Mediana:", round(median_url, 4), "\n")
+cat("Moda:", mode_url, "\n")
+cat("Varianza:", round(var_url, 4), "\n")
+cat("Deviazione Standard:", round(sd_url, 4), "\n")
+
+cat("\nQuartili:\n")
+cat("Valore Minimo (Q0):", min_url, "\n")
+cat("Primo Quartile (Q1):", quantiles_url[1], "\n")
+cat("Terzo Quartile (Q3):", quantiles_url[2], "\n")
+cat("Valore Massimo(Q4):", max_url, "\n")
+cat("IQR:", IQR, "\n")
+cat("Outlier: [", lim_inf, ",", lim_sup, "]\n")
+
+# Creazione del boxplot
+boxplot(synthetic_top_data$URLSimilarityIndex,
+        main = "Boxplot di URLSimilarityIndex",
+        ylab = "Valori di URLSimilarityIndex",
+        col = "#00AFBB",
+        border = "darkblue",
+        notch = FALSE)
+
 
 ```
 
