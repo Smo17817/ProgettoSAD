@@ -423,16 +423,18 @@ print(conf_matrix)
 
 ```
 
+La sezione successiva è necessaria per la generazione di dati sintetici: si estrae un campione di cinque righe casuali che verranno date all'LLM per capire come generare un nuovo dataset.
+
 ```{r}
 
 # Estrazione righe come esempio per l'LLM
 
-first_five_rows <- head(phishing_data, 5)
+five_rows <- phishing_data[sample(nrow(phishing_data), 5), ]
 
 # Salvare le righe estratte in un nuovo file .csv
-write.csv(first_five_rows, "First_Five_Rows.csv", row.names = FALSE)
+write.csv(five_rows, "Five_Rows.csv", row.names = FALSE)
 
-cat("Il file 'First_Five_Rows.csv' è stato salvato con successo.")
+cat("Il file 'Five_Rows.csv' è stato salvato con successo.")
 
 ```
 
