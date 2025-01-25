@@ -396,9 +396,6 @@ cat("Accuratezza del modello sul test set:", accuracy, "\n")
 conf_matrix <- confusionMatrix(as.factor(test_data$predicted_label), as.factor(test_data$label))
 print(conf_matrix)
 
-
-
-
 ```
 
 ```{r}
@@ -717,6 +714,7 @@ ggplot(cor_matrix_melted, aes(Var1, Var2, fill = value)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotazione dei nomi sull'asse X
 
 ```
+
 ```{r}
 
 # FASE 8.7: Tabelle di Contingenza delle variabili sintetiche
@@ -796,7 +794,6 @@ sorted_label_correlation <- sort(label_correlation, decreasing = TRUE)
 print(sorted_label_correlation)
 
 ```
-
 
 ```{r}
 
@@ -985,5 +982,115 @@ ggplot(synthetic_top_data,
            y = 0.015, 
            label = paste("Curtosi =", round(kurtosis_url, 4)), 
            color = "blue")
+
+```
+
+```{r}
+
+# FASE 8.6: Statistica descrittiva bivariata
+
+# Calcolo della covarianza tra variabili
+for (feature in top_features) {
+  if (feature != "URLSimilarityIndex") {
+    # Covarianza tra la variabile continua e la binaria
+    cov_bin_cont <- cov(synthetic_top_data$URLSimilarityIndex, synthetic_top_data[[feature]])
+    cat("\nCovarianza tra", feature, " e URLSimilarityIndex:", round(cov_bin_cont, 4), "\n")
+    
+    # Covarianza tra due variabili binarie
+    for (feature2 in top_features) {
+      if (feature != feature2) {
+        cov_bin_bin <- cov(synthetic_top_data[[feature]], synthetic_top_data[[feature2]])
+        cat("Covarianza tra", feature, "e", feature2, ":", round(cov_bin_bin, 4), "\n")
+      }
+    }
+  }
+}
+
+
+# Calcolo del coefficiente di correlazione tra la variabile target e tutte le altre
+cat("\nCoefficiente di correlazione con la variabile target 'label':\n")
+for (feature in top_features) {
+  if (feature != "label") {
+    cor_with_label <- cor(synthetic_top_data$label, synthetic_top_data[[feature]], method = "pearson")
+    cat("Correlazione tra label e", feature, ":", round(cor_with_label, 4), "\n")
+  }
+}
+
+# Sottocampionamento casuale dei dati
+set.seed(123)  # Per riproducibilità
+sampled_data <- synthetic_top_data[sample(1:nrow(synthetic_top_data), 100), ]
+
+# Creazione degli scatterplot
+for (feature in top_features) {
+  if (feature != "label") {
+    plot <- ggplot(sampled_data, aes_string(x = feature, y = "label")) +
+      geom_jitter(width = 0.1, height = 0.1, alpha = 0.5, color = "#00AFBB") +  # Cambia il colore dei pallini
+      labs(title = paste("Scatterplot tra", feature, "e label"),
+           x = feature, y = "label") +
+      theme_minimal()
+    print(plot)  # Mostra il grafico
+  }
+}
+
+# Calcolo della matrice di correlazione
+cor_matrix <- cor(synthetic_top_data[, top_features], method = "pearson")
+
+# Heatmap della matrice di correlazione con asse X verticale
+cor_matrix_melted <- melt(cor_matrix)
+ggplot(cor_matrix_melted, aes(Var1, Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(midpoint = 0, low = "blue", high = "red", mid = "white") +
+  theme_minimal() +
+  labs(title = "Matrice di Correlazione tra le variabili") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotazione dei nomi sull'asse X
+
+```
+```{r}
+
+# FASE 9.7: Tabelle di Contingenza delle variabili sintetiche
+
+cat("\n# Tabelle di contingenza\n")
+
+# Creazione degli intervalli di 10 per URLSimilarityIndex
+synthetic_top_data$URLSimilarityIndex_bins <- cut(
+  synthetic_top_data$URLSimilarityIndex, 
+  breaks = seq(0, 100, by = 10),
+  include.lowest = TRUE, 
+  right = FALSE
+)
+
+# Tabella di contingenza tra 'label' e URLSimilarityIndex
+cat("\nTabella di contingenza tra 'label' e intervalli di URLSimilarityIndex:\n")
+url_contingency_table <- table(synthetic_top_data$label, synthetic_top_data$URLSimilarityIndex_bins)
+print(url_contingency_table)
+
+# Tabelle di contingenza per le variabili binarie
+for (feature in top_features) {
+  if (feature != "label" && feature != "URLSimilarityIndex") {
+    contingency_table <- table(synthetic_top_data$label, synthetic_top_data[[feature]])
+    cat("\nTabella di contingenza tra 'label' e", feature, ":\n")
+    print(contingency_table)
+  }
+}
+
+```
+
+```{r}
+
+# FASE 9.8: Applicazione del modello su dati sintetici
+
+# Prevedere le probabilità
+synthetic_top_data$predicted_prob <- predict(model, newdata = synthetic_top_data, type = "response")
+
+# Convertire le probabilità in etichette binarie (threshold 0.5)
+synthetic_top_data$predicted_label <- ifelse(synthetic_top_data$predicted_prob > 0.5, 1, 0)
+
+# Accuratezza
+accuracy <- mean(synthetic_top_data$predicted_label == synthetic_top_data$label)
+cat("Accuratezza del modello sul nuovo dataset:", accuracy, "\n")
+
+# Confusion Matrix
+conf_matrix <- confusionMatrix(as.factor(synthetic_top_data$predicted_label), as.factor(synthetic_top_data$label))
+print(conf_matrix)
 
 ```
