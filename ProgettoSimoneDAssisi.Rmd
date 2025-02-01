@@ -438,12 +438,22 @@ cat("Il file 'Five_Rows.csv' è stato salvato con successo.")
 ```{r}
 # FASE 8: Caricamento Dataset Sintetico
 
+# Caricamento del dataset sintetico
 synthetic_data <- read.csv("Dataset/Synthetic_Phishing_Dataset.csv")
 
+# Mostra le prime righe del dataset
 head(synthetic_data)
+
+# Duplicati
+num_duplicati <- sum(duplicated(synthetic_data))
+cat("Numero di righe duplicate:", num_duplicati, "\n")
 
 # Esegui la selezione delle feature
 synthetic_top_data <- synthetic_data[, top_features]
+
+# Duplicati
+num_duplicati <- sum(duplicated(synthetic_top_data))
+cat("Numero di righe duplicate considerando le 6 feature principali:", num_duplicati, "\n")
 
 ```
 
@@ -772,8 +782,16 @@ synthetic_data_2 <- read.csv("Dataset/Synthetic_Phishing_Dataset_2.csv", sep = "
 
 head(synthetic_data_2)
 
+# Duplicati
+num_duplicati <- sum(duplicated(synthetic_data_2))
+cat("Numero di righe duplicate:", num_duplicati, "\n")
+
 # Esegui la selezione delle feature
 synthetic_top_data <- synthetic_data_2[, top_features]
+
+# Duplicati
+num_duplicati <- sum(duplicated(synthetic_top_data))
+cat("Numero di righe duplicate considerando le 6 feature principali:", num_duplicati, "\n")
 
 ```
 
