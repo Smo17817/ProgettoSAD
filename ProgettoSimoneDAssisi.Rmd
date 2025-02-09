@@ -778,8 +778,60 @@ for (feature in top_features) {
 ```
 
 ```{r}
+# FASE 8.8: Verifica delle ipotesi
 
-# FASE 8.8: Applicazione del modello su dati sintetici
+# Definizione degli intervalli
+num_bins <- 10  
+breaks <- seq(min(synthetic_top_data$URLSimilarityIndex), 
+              max(synthetic_top_data$URLSimilarityIndex), 
+              length.out = num_bins + 1)
+
+# Creazione delle classi
+observed_counts <- table(cut(synthetic_top_data$URLSimilarityIndex, breaks))
+
+# Distribuzione uniforme attesa
+expected_uniform <- rep(sum(observed_counts) / num_bins, num_bins)
+
+# Distribuzione normale attesa
+mean_url <- mean(synthetic_top_data$URLSimilarityIndex)
+sd_url <- sd(synthetic_top_data$URLSimilarityIndex)
+expected_normal <- diff(pnorm(breaks, mean = mean_url, sd = sd_url)) * sum(observed_counts)
+
+# Test del chi-quadrato per distribuzione uniforme
+chisq_test_uniform <- chisq.test(observed_counts, p = rep(1/num_bins, num_bins))
+
+# Test del chi-quadrato per distribuzione normale
+chisq_test_normal <- chisq.test(observed_counts, p = expected_normal / sum(expected_normal))
+
+# Stampa dei risultati
+print(chisq_test_uniform)
+print(chisq_test_normal)
+
+# Distribuzione binomiale per le variabili binarie
+for (feature in top_features) {
+  if (feature != "URLSimilarityIndex") {
+    # Calcolo della proporzione osservata
+    observed_counts <- table(synthetic_top_data[[feature]])
+    n <- length(synthetic_top_data[[feature]])
+    p_hat <- mean(synthetic_top_data[[feature]])  # Proporzione di 1
+    
+    # Frequenze attese da una distribuzione binomiale con p = p_hat
+    expected_binomial <- c(n * (1 - p_hat), n * p_hat)
+    
+    # Test del chi-quadrato per distribuzione binomiale
+    chisq_test_bin <- chisq.test(observed_counts, p = expected_binomial / sum(expected_binomial))
+    
+    cat("\nTest del chi-quadrato per la variabile binaria:", feature, "\n")
+    print(chisq_test_bin)
+  }
+}
+
+```
+
+
+```{r}
+
+# FASE 8.9: Applicazione del modello su dati sintetici
 
 # Prevedere le probabilità
 synthetic_top_data$predicted_prob <- predict(model, newdata = synthetic_top_data, type = "response")
@@ -925,7 +977,7 @@ plot(bins[-length(bins)],
 
 ```{r}
 
-# FASE 8.4: calcolo degli indici di sintesi per le variabili sintetiche
+# FASE 9.4: calcolo degli indici di sintesi per le variabili sintetiche
 
 # Indici per le feature binarie
 for (feature in top_features) {
@@ -1027,7 +1079,7 @@ ggplot(synthetic_top_data,
 
 ```{r}
 
-# FASE 8.6: Statistica descrittiva bivariata
+# FASE 9.6: Statistica descrittiva bivariata
 
 # Calcolo della covarianza tra variabili
 for (feature in top_features) {
@@ -1085,6 +1137,7 @@ ggplot(cor_matrix_melted, aes(Var1, Var2, fill = value)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotazione dei nomi sull'asse X
 
 ```
+
 ```{r}
 
 # FASE 9.7: Tabelle di Contingenza delle variabili sintetiche
@@ -1116,8 +1169,59 @@ for (feature in top_features) {
 ```
 
 ```{r}
+# FASE 9.8: Verifica delle ipotesi
 
-# FASE 9.8: Applicazione del modello su dati sintetici
+# Definizione degli intervalli
+num_bins <- 10  
+breaks <- seq(min(synthetic_top_data$URLSimilarityIndex), 
+              max(synthetic_top_data$URLSimilarityIndex), 
+              length.out = num_bins + 1)
+
+# Creazione delle classi
+observed_counts <- table(cut(synthetic_top_data$URLSimilarityIndex, breaks))
+
+# Distribuzione uniforme attesa
+expected_uniform <- rep(sum(observed_counts) / num_bins, num_bins)
+
+# Distribuzione normale attesa
+mean_url <- mean(synthetic_top_data$URLSimilarityIndex)
+sd_url <- sd(synthetic_top_data$URLSimilarityIndex)
+expected_normal <- diff(pnorm(breaks, mean = mean_url, sd = sd_url)) * sum(observed_counts)
+
+# Test del chi-quadrato per distribuzione uniforme
+chisq_test_uniform <- chisq.test(observed_counts, p = rep(1/num_bins, num_bins))
+
+# Test del chi-quadrato per distribuzione normale
+chisq_test_normal <- chisq.test(observed_counts, p = expected_normal / sum(expected_normal))
+
+# Stampa dei risultati
+print(chisq_test_uniform)
+print(chisq_test_normal)
+
+# Distribuzione binomiale per le variabili binarie
+for (feature in top_features) {
+  if (feature != "URLSimilarityIndex") {
+    # Calcolo della proporzione osservata
+    observed_counts <- table(synthetic_top_data[[feature]])
+    n <- length(synthetic_top_data[[feature]])
+    p_hat <- mean(synthetic_top_data[[feature]])  # Proporzione di 1
+    
+    # Frequenze attese da una distribuzione binomiale con p = p_hat
+    expected_binomial <- c(n * (1 - p_hat), n * p_hat)
+    
+    # Test del chi-quadrato per distribuzione binomiale
+    chisq_test_bin <- chisq.test(observed_counts, p = expected_binomial / sum(expected_binomial))
+    
+    cat("\nTest del chi-quadrato per la variabile binaria:", feature, "\n")
+    print(chisq_test_bin)
+  }
+}
+
+```
+
+```{r}
+
+# FASE 9.9: Applicazione del modello su dati sintetici
 
 # Prevedere le probabilità
 synthetic_top_data$predicted_prob <- predict(model, newdata = synthetic_top_data, type = "response")
