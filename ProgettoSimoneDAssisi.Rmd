@@ -420,28 +420,6 @@ print(conf_matrix)
 
 ```
 
-```{r}
-
-# Fase 7.2: Confronto con un altro dataset (Phishing 4) strutturato in modo simile
-
-test_set <- read.csv("Dataset/Phishing_URL_Dataset_4.csv", sep = ";")
-
-# Prevedere le probabilità
-test_set$predicted_prob <- predict(model, newdata = test_set, type = "response")
-
-# Convertire le probabilità in etichette binarie (threshold 0.5)
-test_set$predicted_label <- ifelse(test_set$predicted_prob > 0.5, 1, 0)
-
-# Accuratezza
-accuracy <- mean(test_set$predicted_label == test_set$label)
-cat("Accuratezza del modello sul nuovo dataset:", accuracy, "\n")
-
-# Confusion Matrix
-conf_matrix <- confusionMatrix(as.factor(test_set$predicted_label), as.factor(test_set$label))
-print(conf_matrix)
-
-```
-
 La sezione successiva è necessaria per la generazione di dati sintetici: si estrae un campione di cinque righe casuali che verranno date all'LLM per capire come generare un nuovo dataset.
 
 ```{r}
